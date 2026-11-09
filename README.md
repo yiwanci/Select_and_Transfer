@@ -1,95 +1,48 @@
-# CLIPood (ICML 2023)
+# Select and Transfer
 
-CLIPood: Generalizing CLIP to Out-of-Distributions [[paper]](https://arxiv.org/abs/2302.00864)
+**Select and Transfer: Selective Cross-Modal Relational Transfer for Domain Generalization in Vision-Language Models**
 
-To maintain CLIP's OOD generalizability when adapting CLIP to downstream tasks, we propose CLIPood with the following features:
-- Better fine-tuning paradigm to utilize knowledge in **text modality**.
-- Margin matric softmax to exploit **semantic relations**.
-- Beta moving average for balancing **pre-trained** and **task-specific** knowledge.
-- State-of-the-art performance on **three OOD settings**.
+Qin Xu, Hongtao Lu, Bo Jiang, and Bin Luo · Anhui University
 
-<p align="center">
-<img src=".\figs\overview.png" height = "320" alt="" align=center />
-<br><br>
-<b>Figure 1.</b> Overview of CLIPood.
-</p>
+## Method
 
-## Get Started
+Select and Transfer adapts a pretrained CLIP model to labeled source data while preserving cross-modal relations that help it generalize to unseen domains.
 
-1. ***(Updated)*** Install [Pytorch](https://pytorch.org/) and [CLIP](https://github.com/openai/CLIP). Then add
-```python
-x = x.type(self.conv1.weight.dtype)
-```
-between Line 223-224 of `CLIP/clip/models.py`. About this modification please refer to [this issue](https://github.com/openai/CLIP/issues/386)
+1. **Informative relation selection.** With both pretrained encoders frozen, the Agent-Guided Relation Module (AGRM) builds class-wise relation embeddings from local visual tokens and multiple text descriptions per class. A shared scorer and an information bottleneck objective jointly encourage predictive sufficiency and redundancy compression.
+2. **Relational knowledge transfer.** The selected AGRM is frozen. It maps teacher and student tokens into a shared relation space. The student adapts using source classification and an alignment loss that matches the teacher's class-centered relational geometry.
 
-2. Prepare Data. Our datasets are built over [DomainBed](https://github.com/facebookresearch/DomainBed) and [CoOp](https://github.com/KaiyangZhou/CoOp) codebases. For usage, one should clone the above two repositories, then download data following the instructions, and arrange the folder as:
-```plain
-CLIPood/
-|-- CoOp/
-    |-- data/
-        |-- caltech-101/
-        |-- eurosat/
-        |-- ...  # other CoOp datasets
-    |-- ...
-|-- DomainBed/
-    |-- domainbed/
-        |-- data/
-            |-- domain_net/
-            |-- office_home/
-            |-- ...  # other DomainBed datasets
-        |-- datasets.py  # the file to update next
-        |-- ...
-    |-- ...
-|-- ...
-```
+At inference, the adapted visual encoder and cached text prototypes form the classifier. The teacher and AGRM are discarded.
 
-3. ***(Important!)*** Replace line 192-208 in file `DomainBed/domainbed/dataset.py` with the following codes:
-```python
-transform = transforms.Compose([
-    transforms.Resize(224),
-    transforms.CenterCrop(224),
-    transforms.ToTensor(),
-    transforms.Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
-])
+## Benchmarks and manuscript results
 
-augment_transform = transforms.Compose([
-    transforms.RandomResizedCrop(224, scale=(0.7, 1.0)),
-    transforms.RandomHorizontalFlip(),
-    transforms.ToTensor(),
-    transforms.Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
-])
-```
+| Setting | Protocol | Reported result |
+| --- | --- | --- |
+| Domain generalization | Leave-one-domain-out on PACS, VLCS, OfficeHome, TerraIncognita, and DomainNet | 81.29% mean accuracy |
+| ImageNet distribution shifts | Adapt on ImageNet-1K and evaluate on ImageNet-V2, ImageNet-Sketch, ImageNet-A, and ImageNet-R | 61.95% mean shifted accuracy |
+| Base-to-novel recognition | 16-shot adaptation on base classes across 11 datasets, followed by separate base and novel evaluation | 85.12% base accuracy, 77.28% novel accuracy, and 81.01% harmonic mean |
 
-This aims to align the data pre-processing with the CLIP model.
+Use the [DomainBed dataset instructions](https://github.com/facebookresearch/DomainBed) for the five domain generalization datasets and the [CoOp dataset guide](https://github.com/KaiyangZhou/CoOp/blob/main/DATASETS.md) for the ImageNet variants and base-to-novel datasets.
 
-4. Train and evaluate model. We provide all training configs in `scripts.py` to reproduce our main results. You can also tune them or experiment on your own dataset.
+## Code in this checkout
 
-## Results
+The current checkout contains an earlier experimental training pipeline. [`relation.py`](relation.py) contains a prototype agent-guided relation module. [`main.py`](main.py), [`engine.py`](engine.py), and [`distill.py`](distill.py) train the visual encoder and relation module jointly, using an earlier distillation objective and beta moving average. [`scripts.sh`](scripts.sh) records example commands for that pipeline.
 
-We extensively experiment on three OOD settings (domain shift, open class, in the wild). On all settings CLIPood achieves remarkable improvement gain and reaches the state-of-the-art.
+The manuscript results above come from the two-stage protocol. Reproducing them requires the separate relation-selection and frozen-reference transfer training code, along with the corresponding configurations and splits. Those files are absent from this checkout.
 
 ## Citation
-If you find this repo useful, please cite our paper.
 
-```plain
-@inproceedings{shu2023CLIPood,
-  title={CLIPood: Generalizing CLIP to Out-of-Distributions},
-  author={Yang Shu and Xingzhuo Guo and Jialong Wu and Ximei Wang and Jianmin Wang and Mingsheng Long},
-  booktitle={International Conference on Machine Learning},
-  year={2023}
+```bibtex
+@unpublished{xu2026selectandtransfer,
+  title  = {Select and Transfer: Selective Cross-Modal Relational Transfer
+            for Domain Generalization in Vision-Language Models},
+  author = {Xu, Qin and Lu, Hongtao and Jiang, Bo and Luo, Bin},
+  year   = {2026},
+  note   = {Manuscript}
 }
 ```
 
-## Contact
+For correspondence about the manuscript, contact Qin Xu at [xuqin@ahu.edu.cn](mailto:xuqin@ahu.edu.cn).
 
-If you have any questions or want to use the code, please contact [gxz23@mails.tsinghua.edu.cn](mailto:gxz23@mails.tsinghua.edu.cn).
+## Acknowledgments
 
-## Acknowledgement
-
-We appreciate the following github repos a lot for their valuable code base or datasets:
-
-https://github.com/thuml/Transfer-Learning-Library
-
-https://github.com/facebookresearch/DomainBed
-
-https://github.com/KaiyangZhou/CoOp
+This project builds on [CLIP](https://github.com/openai/CLIP), [CLIPood](https://github.com/thuml/CLIPood), [Transfer-Learning-Library](https://github.com/thuml/Transfer-Learning-Library), [DomainBed](https://github.com/facebookresearch/DomainBed), and [CoOp](https://github.com/KaiyangZhou/CoOp). See [LICENSE](LICENSE) for licensing information.
