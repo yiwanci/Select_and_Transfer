@@ -23,12 +23,6 @@ At inference, the adapted visual encoder and cached text prototypes form the cla
 
 Use the [DomainBed dataset instructions](https://github.com/facebookresearch/DomainBed) for the five domain generalization datasets and the [CoOp dataset guide](https://github.com/KaiyangZhou/CoOp/blob/main/DATASETS.md) for the ImageNet variants and base-to-novel datasets.
 
-## Code in this checkout
-
-The current checkout contains an earlier experimental training pipeline. [`relation.py`](relation.py) contains a prototype agent-guided relation module. [`main.py`](main.py), [`engine.py`](engine.py), and [`distill.py`](distill.py) train the visual encoder and relation module jointly, using an earlier distillation objective and beta moving average. [`scripts.sh`](scripts.sh) records example commands for that pipeline.
-
-The manuscript results above come from the two-stage protocol. Reproducing them requires the separate relation-selection and frozen-reference transfer training code, along with the corresponding configurations and splits. Those files are absent from this checkout.
-
 ## Citation
 
 ```bibtex
